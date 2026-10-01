@@ -51,7 +51,15 @@ Pobierz `Notatki Setup x.y.z.exe` z zakładki [Releases](../../releases) i uruch
   - **SmartScreen:** kliknij „Więcej informacji”, a potem „Uruchom mimo to”.
   - **Inteligentna kontrola aplikacji** (Windows 11) blokuje niepodpisane programy całkowicie. Wtedy zbuduj aplikację ze źródeł albo użyj innego komputera.
 
-Notatki są zapisywane w `%APPDATA%\Notatki\notes.json`.
+### Wersja przenośna (bez instalatora)
+
+Pobierz `Notatki-portable.zip` z [Releases](../../releases) i rozpakuj go do dowolnego folderu, w którym możesz zapisywać pliki, np. `Dokumenty\Notatki`. Potem uruchom `Notatki.exe`.
+
+- Nie wymaga instalacji ani uprawnień administratora. Działa też z pendrive'a.
+- Skrót do menu Start dodasz ręcznie: prawy przycisk na `Notatki.exe` → „Przypnij do ekranu startowego” albo „Wyślij do” → „Pulpit”.
+- Nie przenoś folderu po włączeniu autostartu. Jeśli go przeniesiesz, wyłącz i włącz autostart ponownie w aplikacji.
+
+Notatki są zapisywane w `%APPDATA%\Notatki\notes.json`. Żeby przenieść notatki na inny komputer, skopiuj ten plik.
 
 ## Budowanie ze źródeł
 
