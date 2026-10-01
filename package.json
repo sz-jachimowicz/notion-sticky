@@ -1,0 +1,65 @@
+{
+  "name": "notion-sticky",
+  "version": "1.0.0",
+  "description": "Karteczki w stylu Notion",
+  "main": "main.js",
+  "scripts": {
+    "build": "node build.mjs",
+    "start": "node build.mjs && electron .",
+    "dist": "node build.mjs && electron-builder --win nsis",
+    "pack": "node build.mjs && electron-builder --win --dir",
+    "update": "npm run pack && node scripts/update-installed.mjs"
+  },
+  "keywords": [],
+  "author": "szy05",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
+    "esbuild": "^0.28.2"
+  },
+  "dependencies": {
+    "@tiptap/core": "^3.31.3",
+    "@tiptap/extension-color": "^3.31.3",
+    "@tiptap/extension-details": "^3.31.3",
+    "@tiptap/extension-highlight": "^3.31.3",
+    "@tiptap/extension-link": "^3.31.3",
+    "@tiptap/extension-placeholder": "^3.31.3",
+    "@tiptap/extension-table": "^3.31.3",
+    "@tiptap/extension-task-item": "^3.31.3",
+    "@tiptap/extension-task-list": "^3.31.3",
+    "@tiptap/extension-text-style": "^3.31.3",
+    "@tiptap/extension-underline": "^3.31.3",
+    "@tiptap/pm": "^3.31.3",
+    "@tiptap/starter-kit": "^3.31.3",
+    "@tiptap/suggestion": "^3.31.3"
+  },
+  "productName": "Notatki",
+  "build": {
+    "appId": "pl.notionsticky.app",
+    "productName": "Notatki",
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*.html",
+      "src/**/*.css",
+      "dist/note.js",
+      "dist/manager.js",
+      "assets/**/*"
+    ],
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "shortcutName": "Notatki"
+    },
+    "directories": {
+      "output": "release"
+    }
+  }
+}

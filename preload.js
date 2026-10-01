@@ -1,0 +1,24 @@
+const { contextBridge, ipcRenderer } = require('electron')
+
+contextBridge.exposeInMainWorld('api', {
+  getNote: (id) => ipcRenderer.invoke('note:get', id),
+  updateNote: (id, patch) => ipcRenderer.invoke('note:update', id, patch),
+  updateNoteSync: (id, patch) => ipcRenderer.sendSync('note:update-sync', id, patch),
+  setPinned: (id, pinned) => ipcRenderer.invoke('note:setPinned', id, pinned),
+  createNote: () => ipcRenderer.invoke('note:create'),
+  openNote: (id) => ipcRenderer.invoke('note:open', id),
+  closeNote: (id) => ipcRenderer.invoke('note:close', id),
+  minimizeNote: (id) => ipcRenderer.invoke('note:minimize', id),
+  trashNote: (id) => ipcRenderer.invoke('note:trash', id),
+  restoreNote: (id) => ipcRenderer.invoke('note:restore', id),
+  destroyNote: (id) => ipcRenderer.invoke('note:destroy', id),
+  duplicateNote: (id) => ipcRenderer.invoke('note:duplicate', id),
+  emptyTrash: () => ipcRenderer.invoke('trash:empty'),
+  listNotes: () => ipcRenderer.invoke('notes:list'),
+  openManager: () => ipcRenderer.invoke('manager:open'),
+  getSettings: () => ipcRenderer.invoke('settings:get'),
+  setSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
+  openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
+  onNotesChanged: (cb) => ipcRenderer.on('notes:changed', () => cb()),
+  onMeta: (cb) => ipcRenderer.on('note:meta', (_e, meta) => cb(meta)),
+})

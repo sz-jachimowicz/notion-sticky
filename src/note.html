@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; script-src 'self'" />
+  <title>Notatka</title>
+  <link rel="stylesheet" href="theme.css" />
+  <link rel="stylesheet" href="note.css" />
+</head>
+<body>
+  <div class="note">
+    <header class="topbar" id="topbar">
+      <div class="tb-group tb-left">
+        <button class="icon-btn" id="btn-new" data-tip="Nowa notatka|Ctrl+N"></button>
+        <button class="icon-btn" id="btn-all" data-tip="Wszystkie notatki"></button>
+      </div>
+      <div class="tb-center"><input id="title" class="tb-title" placeholder="Bez tytułu" spellcheck="false" maxlength="120" /><span class="tb-status" id="tb-status"></span></div>
+      <div class="tb-group tb-right">
+        <button class="icon-btn" id="btn-pin" data-tip="Zawsze na wierzchu|Ctrl+Shift+P"></button>
+        <button class="icon-btn" id="btn-fav" data-tip="Ulubione"></button>
+        <button class="icon-btn" id="btn-more" data-tip="Więcej"></button>
+        <button class="icon-btn" id="btn-min" data-tip="Minimalizuj"></button>
+        <button class="icon-btn" id="btn-close" data-tip="Zamknij notatkę|Ctrl+W"></button>
+      </div>
+    </header>
+    <main class="scroller" id="scroller">
+      <div id="editor" class="page"></div>
+    </main>
+    <div class="tablebar" id="tablebar"></div>
+    <footer class="toolbar" id="toolbar"></footer>
+  </div>
+  <script src="../dist/note.js"></script>
+</body>
+</html>

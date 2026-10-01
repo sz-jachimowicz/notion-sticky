@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self'" />
+  <title>Notatki</title>
+  <link rel="stylesheet" href="theme.css" />
+  <link rel="stylesheet" href="manager.css" />
+</head>
+<body>
+  <div class="titlebar"><span class="app-name"><span class="logo"></span>Notatki</span></div>
+  <div class="layout">
+    <aside class="sidebar">
+      <label class="search">
+        <span class="search-icon" id="search-icon"></span>
+        <input id="search" placeholder="Szukaj" spellcheck="false" />
+        <span class="search-kbd">Ctrl+F</span>
+      </label>
+      <nav id="nav"></nav>
+      <div class="side-bottom">
+        <button class="side-item" id="autostart"></button>
+      </div>
+    </aside>
+    <main class="content">
+      <div class="content-head">
+        <div>
+          <h1 id="view-title">Wszystkie notatki</h1>
+          <div class="view-sub" id="view-sub"></div>
+        </div>
+        <div class="head-actions" id="head-actions"></div>
+      </div>
+      <div class="list" id="list"></div>
+    </main>
+  </div>
+  <script src="../dist/manager.js"></script>
+</body>
+</html>
