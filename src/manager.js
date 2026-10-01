@@ -25,6 +25,87 @@ async function load() {
 
 window.api.onNotesChanged(load)
 
+// ---------- synchronizacja ----------
+let syncSt = { state: 'disabled' }
+const SYNC_LABEL = {
+  'signed-out': 'Zaloguj, aby synchronizować',
+  syncing: 'Synchronizowanie…',
+  ok: 'Zsynchronizowano',
+  offline: 'Brak połączenia',
+  error: 'Błąd synchronizacji',
+}
+
+function renderSync() {
+  const b = $('#sync-btn')
+  if (!b) return
+  if (syncSt.state === 'disabled') {
+    b.style.display = 'none'
+    return
+  }
+  b.style.display = ''
+  b.innerHTML = ''
+  b.append(
+    h('span', { class: 'si-icon', html: icons.cloud }),
+    h('span', { class: 'sync-text' },
+      h('span', { class: 'sync-main' }, syncSt.email || 'Synchronizacja'),
+      h('span', { class: 'sync-sub' }, SYNC_LABEL[syncSt.state] || '')),
+    h('span', { class: 'si-count' }, h('span', { class: 'sync-dot ' + syncSt.state })))
+  b.onclick = () => openSyncMenu(b)
+}
+
+function openSyncMenu(anchor) {
+  if (syncSt.state === 'signed-out') return openLoginForm(anchor)
+  const item = (icon, label, fn, cls = '') =>
+    h('button', { class: 'menu-item ' + cls, onclick: fn }, h('span', { class: 'mi-icon', html: icon }), label)
+  popover(anchor, h('div', { class: 'sync-menu' },
+    h('div', { class: 'sync-head' },
+      h('div', { class: 'sync-email' }, syncSt.email || ''),
+      h('div', { class: 'sync-state' },
+        h('span', { class: 'sync-dot ' + syncSt.state }),
+        (SYNC_LABEL[syncSt.state] || '') + (syncSt.lastSync && syncSt.state === 'ok' ? ' · ' + relTime(syncSt.lastSync) : '')),
+      syncSt.error ? h('div', { class: 'form-error' }, syncSt.error) : null),
+    h('div', { class: 'menu-sep' }),
+    item(icons.refresh, 'Synchronizuj teraz', () => { closeMenu(); window.api.sync.refresh() }),
+    item(icons.logout, 'Wyloguj', () => { closeMenu(); window.api.sync.signOut() }, 'danger'),
+  ), { placement: 'above' })
+}
+
+function openLoginForm(anchor) {
+  const email = h('input', { class: 'form-input', type: 'email', placeholder: 'E-mail', autocomplete: 'email' })
+  const pass = h('input', { class: 'form-input', type: 'password', placeholder: 'Hasło (min. 6 znaków)', autocomplete: 'current-password' })
+  const msg = h('div', { class: 'form-error' })
+  const busy = (on) => form.querySelectorAll('button').forEach((b) => (b.disabled = on))
+  const run = async (fn) => {
+    msg.className = 'form-error'
+    msg.textContent = ''
+    if (!email.value.trim() || !pass.value) {
+      msg.textContent = 'Podaj e-mail i hasło.'
+      return
+    }
+    busy(true)
+    const res = await fn(email.value, pass.value)
+    busy(false)
+    if (res && res.error) msg.textContent = res.error
+    else if (res && res.confirm) {
+      msg.className = 'form-info'
+      msg.textContent = 'Konto założone. Kliknij link w mailu od Supabase, potem zaloguj się tutaj.'
+    } else closeMenu()
+  }
+  const form = h('div', { class: 'login-form' },
+    h('div', { class: 'login-title' }, 'Synchronizacja'),
+    h('div', { class: 'login-desc' }, 'Zaloguj się, aby mieć te same notatki na komputerze i telefonie.'),
+    email, pass, msg,
+    h('div', { class: 'login-actions' },
+      h('button', { class: 'btn', onclick: () => run(window.api.sync.signUp) }, 'Załóż konto'),
+      h('button', { class: 'btn primary', onclick: () => run(window.api.sync.signIn) }, 'Zaloguj się')))
+  pass.addEventListener('keydown', (e) => { if (e.key === 'Enter') run(window.api.sync.signIn) })
+  popover(anchor, form, { placement: 'above' })
+  setTimeout(() => email.focus())
+}
+
+window.api.sync.status().then((st) => { syncSt = st; renderSync() })
+window.api.sync.onStatus((st) => { syncSt = st; renderSync() })
+
 function renderNav() {
   const nav = $('#nav')
   nav.innerHTML = ''

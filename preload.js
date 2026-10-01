@@ -21,4 +21,13 @@ contextBridge.exposeInMainWorld('api', {
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
   onNotesChanged: (cb) => ipcRenderer.on('notes:changed', () => cb()),
   onMeta: (cb) => ipcRenderer.on('note:meta', (_e, meta) => cb(meta)),
+  onRemoteContent: (cb) => ipcRenderer.on('note:remote-content', (_e, content) => cb(content)),
+  sync: {
+    status: () => ipcRenderer.invoke('sync:status'),
+    signIn: (email, password) => ipcRenderer.invoke('sync:signIn', email, password),
+    signUp: (email, password) => ipcRenderer.invoke('sync:signUp', email, password),
+    signOut: () => ipcRenderer.invoke('sync:signOut'),
+    refresh: () => ipcRenderer.invoke('sync:refresh'),
+    onStatus: (cb) => ipcRenderer.on('sync:status', (_e, st) => cb(st)),
+  },
 })

@@ -8,18 +8,22 @@
     "start": "node build.mjs && electron .",
     "dist": "node build.mjs && electron-builder --win nsis",
     "pack": "node build.mjs && electron-builder --win --dir",
-    "update": "npm run pack && node scripts/update-installed.mjs"
+    "update": "npm run pack && node scripts/update-installed.mjs",
+    "android": "node build.mjs && npx cap sync android"
   },
   "keywords": [],
   "author": "szy05",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
     "electron": "^44.5.1",
     "electron-builder": "^26.15.3",
-    "esbuild": "^0.28.2"
-  },
-  "dependencies": {
+    "esbuild": "^0.28.2",
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "^8.5.2",
+    "@supabase/supabase-js": "^2.117.2",
     "@tiptap/core": "^3.31.3",
     "@tiptap/extension-color": "^3.31.3",
     "@tiptap/extension-details": "^3.31.3",
@@ -35,6 +39,7 @@
     "@tiptap/starter-kit": "^3.31.3",
     "@tiptap/suggestion": "^3.31.3"
   },
+  "dependencies": {},
   "productName": "Notatki",
   "build": {
     "appId": "pl.notionsticky.app",
@@ -44,9 +49,12 @@
       "preload.js",
       "src/**/*.html",
       "src/**/*.css",
+      "src/config.json",
       "dist/note.js",
       "dist/manager.js",
-      "assets/**/*"
+      "dist/sync.cjs",
+      "assets/**/*",
+      "!src/mobile/**"
     ],
     "win": {
       "icon": "assets/icon.ico",

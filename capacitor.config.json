@@ -1,0 +1,15 @@
+{
+  "appId": "pl.notionsticky.notatki",
+  "appName": "Notatki",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#191919"
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "style": "DARK",
+      "initialViewportFitValueHint": "cover"
+    }
+  }
+}

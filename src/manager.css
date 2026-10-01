@@ -181,3 +181,32 @@ mark { background: rgba(202, 152, 73, 0.4); color: var(--text-strong); border-ra
   .sidebar { width: 200px; }
   .content { padding: 24px 22px 40px; }
 }
+
+/* ---------- synchronizacja ---------- */
+.sync-item { height: auto; min-height: 40px; padding-top: 4px; padding-bottom: 4px; }
+.sync-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.sync-main { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sync-sub { font-size: 11.5px; font-weight: 400; color: var(--text-3); }
+.sync-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-3); flex: none; }
+.sync-dot.ok { background: #529e72; }
+.sync-dot.syncing { background: #5e87c9; animation: pulse 1s infinite alternate; }
+.sync-dot.error, .sync-dot.offline { background: #df5452; }
+@keyframes pulse { to { opacity: 0.35; } }
+.sync-menu { width: 250px; }
+.sync-head { padding: 6px 8px 4px; }
+.sync-email { font-weight: 600; color: var(--text-strong); overflow: hidden; text-overflow: ellipsis; }
+.sync-state { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-2); margin-top: 3px; }
+.login-form { width: 270px; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+.login-title { font-weight: 600; color: var(--text-strong); }
+.login-desc { font-size: 12.5px; color: var(--text-2); line-height: 1.4; margin-top: -4px; }
+.form-input {
+  height: 32px; border: 0; outline: 0; border-radius: 6px; padding: 0 10px;
+  background: rgba(255, 255, 255, 0.055); box-shadow: inset 0 0 0 1px var(--border-2);
+  color: var(--text); font: inherit;
+}
+.form-input:focus { box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 2px var(--accent-soft); }
+.form-error { font-size: 12.5px; color: #ff8b8b; line-height: 1.4; }
+.form-error:empty, .form-info:empty { display: none; }
+.form-info { font-size: 12.5px; color: #7fb8f0; line-height: 1.4; }
+.login-actions { display: flex; justify-content: flex-end; gap: 6px; }
+.btn:disabled { opacity: 0.5; pointer-events: none; }

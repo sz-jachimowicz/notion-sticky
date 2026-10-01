@@ -61,6 +61,33 @@ Pobierz `Notatki-portable.zip` z [Releases](../../releases) i rozpakuj go do dow
 
 Notatki są zapisywane w `%APPDATA%\Notatki\notes.json`. Żeby przenieść notatki na inny komputer, skopiuj ten plik.
 
+## Synchronizacja i aplikacja na Androida
+
+Notatki synchronizują się między komputerem a telefonem przez [Supabase](https://supabase.com) (darmowy plan wystarcza).
+
+1. Załóż projekt na supabase.com.
+2. W **SQL Editor** wklej i uruchom [`supabase/schema.sql`](supabase/schema.sql). Utworzy on tabelę, zabezpieczenia (każdy widzi tylko swoje notatki) i zmiany na żywo.
+3. W **Project Settings → API** skopiuj *Project URL* i klucz *publishable* (albo *anon*) do pliku `src/config.json`:
+   ```json
+   { "supabaseUrl": "https://xxxx.supabase.co", "supabaseKey": "sb_publishable_..." }
+   ```
+   Klucz publiczny może być w repozytorium, bo dostęp do danych chronią reguły RLS z `schema.sql`.
+4. Zbuduj aplikację na komputer (`npm run dist` albo `npm run update`) i na Androida (niżej).
+5. W aplikacji zaloguj się tym samym e-mailem i hasłem na obu urządzeniach. Na komputerze zrobisz to w oknie „Wszystkie notatki” → „Synchronizacja” w lewym dolnym rogu, a na telefonie przez ikonę chmurki.
+
+Przy konflikcie wygrywa nowsza wersja notatki. Bez internetu wszystko działa lokalnie, a zmiany wysyłają się po odzyskaniu połączenia.
+
+### Budowanie APK
+
+Wymagane są Android SDK (API 36) i JDK 21.
+
+```bash
+npm run android                 # buduje www/ i kopiuje do projektu Android
+cd android && ./gradlew assembleDebug
+```
+
+Plik APK znajdziesz w `android/app/build/outputs/apk/debug/app-debug.apk`. Skopiuj go na telefon i zainstaluj (Android zapyta o zgodę na instalację z nieznanego źródła).
+
 ## Budowanie ze źródeł
 
 Wymagany jest [Node.js](https://nodejs.org) LTS.

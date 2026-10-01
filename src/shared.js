@@ -38,6 +38,9 @@ export const icons = {
   toggle: '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5.5v13l10-6.5z"/></svg>',
   up: svg('M12 19V5M5 12l7-7 7 7'),
   down: svg('M12 5v14M19 12l-7 7-7-7'),
+  cloud: svg('M17.5 19a4.5 4.5 0 1 0-1.4-8.78A6 6 0 0 0 4.5 12.5 3.5 3.5 0 0 0 6.5 19z'),
+  refresh: svg('M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5'),
+  logout: svg('M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9'),
   clear: svg('M4 7V4h16v3M5 20h6M13 4 8 20M15 15l5 5M20 15l-5 5'),
 }
 

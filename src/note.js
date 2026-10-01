@@ -110,6 +110,17 @@ async function togglePin() {
   await window.api.setPinned(id, note.pinned)
 }
 
+// zmiana treści z innego urządzenia (synchronizacja)
+window.api.onRemoteContent((content) => {
+  if (!editor || dirty) return
+  const { from, to } = editor.state.selection
+  editor.commands.setContent(content || '', { emitUpdate: false })
+  const max = editor.state.doc.content.size
+  try {
+    editor.commands.setTextSelection({ from: Math.min(from, max), to: Math.min(to, max) })
+  } catch {}
+})
+
 window.api.onMeta((meta) => {
   Object.assign(note, meta)
   applyMeta()

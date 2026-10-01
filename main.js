@@ -1,7 +1,10 @@
-const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, screen, shell, globalShortcut } = require('electron')
+const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, screen, shell, globalShortcut, safeStorage, powerMonitor } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const crypto = require('crypto')
+
+// testy: osobny folder danych, żeby nie kolidować z zainstalowaną aplikacją
+if (process.env.NOTES_DATA_DIR) app.setPath('userData', process.env.NOTES_DATA_DIR)
 
 if (!app.requestSingleInstanceLock()) {
   app.quit()
@@ -72,6 +75,7 @@ function newNoteRecord(extra = {}) {
     bounds: null,
     createdAt: now,
     updatedAt: now,
+    modified: now,
     ...extra,
   }
   db.notes.push(note)
@@ -84,6 +88,116 @@ const displayTitle = (n) => n.title || n.autoTitle || 'Bez tytułu'
 const metaOf = (n) => {
   const { content, ...meta } = n
   return meta
+}
+
+// ---------- synchronizacja (Supabase) ----------
+const SYNC_CONFIG = require('./src/config.json')
+const SYNC_FIELDS = ['content', 'text', 'title', 'autoTitle', 'empty', 'color', 'font', 'small',
+  'favorite', 'deleted', 'deletedAt', 'createdAt', 'updatedAt', 'modified']
+let sync = null
+let syncStatus = { state: 'disabled' }
+
+// sesja logowania zaszyfrowana kluczem systemu Windows (safeStorage)
+const AUTH_FILE = path.join(DATA_DIR, 'sync-auth.bin')
+let authCache = null
+function readAuth() {
+  if (authCache) return authCache
+  authCache = {}
+  try {
+    const buf = fs.readFileSync(AUTH_FILE)
+    const json = safeStorage.isEncryptionAvailable() ? safeStorage.decryptString(buf) : buf.toString('utf8')
+    authCache = JSON.parse(json)
+  } catch {}
+  return authCache
+}
+function writeAuth() {
+  const json = JSON.stringify(authCache || {})
+  const data = safeStorage.isEncryptionAvailable() ? safeStorage.encryptString(json) : Buffer.from(json, 'utf8')
+  fs.mkdirSync(DATA_DIR, { recursive: true })
+  fs.writeFileSync(AUTH_FILE, data)
+}
+const authStorage = {
+  getItem: (k) => (k in readAuth() ? readAuth()[k] : null),
+  setItem: (k, v) => { readAuth()[k] = v; writeAuth() },
+  removeItem: (k) => { delete readAuth()[k]; writeAuth() },
+}
+
+// lokalna zmiana pól synchronizowanych -> nowy znacznik i wysyłka
+function touch(n) {
+  n.modified = Math.max(Date.now(), (n.modified || 0) + 1)
+  if (sync) sync.push(n.id)
+}
+
+// notatka znika na zawsze (lokalnie i — jeśli była w chmurze — na innych urządzeniach)
+function purgeNote(id) {
+  const n = getNote(id)
+  db.notes = db.notes.filter((x) => x.id !== id)
+  if (sync && n && n.syncedModified) sync.purge(id)
+}
+
+const syncAdapter = {
+  list: () => db.notes,
+  get: (id) => getNote(id),
+  applyRemote(r) {
+    let n = getNote(r.id)
+    const isNew = !n
+    if (!n) {
+      n = { id: r.id, pinned: false, open: false, bounds: null }
+      db.notes.push(n)
+    }
+    const contentChanged = !isNew && JSON.stringify(n.content) !== JSON.stringify(r.content)
+    for (const k of SYNC_FIELDS) n[k] = r[k]
+    n.syncedModified = r.modified
+    saveDb()
+    const win = noteWins.get(n.id)
+    if (win && !win.isDestroyed()) {
+      if (n.deleted) {
+        n.open = false
+        win.close()
+      } else {
+        if (contentChanged) win.webContents.send('note:remote-content', n.content)
+        sendMeta(n.id)
+        win.setTitle(displayTitle(n))
+      }
+    }
+    broadcastList()
+  },
+  remove(id) {
+    const win = noteWins.get(id)
+    db.notes = db.notes.filter((x) => x.id !== id)
+    saveDb()
+    if (win && !win.isDestroyed()) win.close()
+    broadcastList()
+  },
+  markSynced(id, modified) {
+    const n = getNote(id)
+    if (n) {
+      n.syncedModified = modified
+      saveDb()
+    }
+  },
+}
+
+function initSync() {
+  if (!SYNC_CONFIG.supabaseUrl || !SYNC_CONFIG.supabaseKey) {
+    syncStatus = { state: 'disabled' }
+    return
+  }
+  const { createSync } = require('./dist/sync.cjs')
+  sync = createSync({
+    url: SYNC_CONFIG.supabaseUrl,
+    key: SYNC_CONFIG.supabaseKey,
+    storage: authStorage,
+    adapter: syncAdapter,
+    onStatus: (st) => {
+      syncStatus = st
+      if (managerWin && !managerWin.isDestroyed()) managerWin.webContents.send('sync:status', st)
+    },
+  })
+  sync.init().catch((e) => console.error('sync init', e))
+  // po wybudzeniu komputera i co 5 minut dociągnij zmiany
+  powerMonitor.on('resume', () => sync.refresh())
+  setInterval(() => sync.refresh(), 5 * 60 * 1000)
 }
 
 // ---------- windows ----------
@@ -248,7 +362,7 @@ function openNote(id, { focus = true } = {}) {
     const note = getNote(id)
     if (note && !quitting) {
       if (note.empty && !note.deleted) {
-        db.notes = db.notes.filter((x) => x.id !== id)
+        purgeNote(id)
       } else {
         note.open = false
       }
@@ -376,6 +490,7 @@ function applyPatch(id, patch) {
   }
   if ('content' in patch) n.updatedAt = Date.now()
   if (touched) {
+    touch(n)
     saveDb()
     broadcastList()
     if (!('content' in patch)) sendMeta(id)
@@ -412,11 +527,12 @@ ipcMain.handle('note:trash', (_e, id) => {
   if (!n) return
   const win = noteWins.get(id)
   if (n.empty) {
-    db.notes = db.notes.filter((x) => x.id !== id)
+    purgeNote(id)
   } else {
     n.deleted = true
     n.deletedAt = Date.now()
     n.open = false
+    touch(n)
   }
   saveDb()
   if (win && !win.isDestroyed()) win.close()
@@ -428,20 +544,21 @@ ipcMain.handle('note:restore', (_e, id) => {
   if (!n) return
   n.deleted = false
   n.deletedAt = null
+  touch(n)
   saveDb()
   broadcastList()
 })
 
 ipcMain.handle('note:destroy', (_e, id) => {
   const win = noteWins.get(id)
-  db.notes = db.notes.filter((x) => x.id !== id)
+  purgeNote(id)
   saveDb()
   if (win && !win.isDestroyed()) win.close()
   broadcastList()
 })
 
 ipcMain.handle('trash:empty', () => {
-  db.notes = db.notes.filter((x) => !x.deleted)
+  db.notes.filter((x) => x.deleted).forEach((x) => purgeNote(x.id))
   saveDb()
   broadcastList()
 })
@@ -449,8 +566,10 @@ ipcMain.handle('trash:empty', () => {
 ipcMain.handle('note:duplicate', (_e, id) => {
   const n = getNote(id)
   if (!n) return
-  const { id: _id, bounds, createdAt, updatedAt, ...rest } = JSON.parse(JSON.stringify(n))
-  return createNote({ ...rest, favorite: false, pinned: false, deleted: false, open: true, title: rest.title })
+  const { id: _id, bounds, createdAt, updatedAt, modified, syncedModified, ...rest } = JSON.parse(JSON.stringify(n))
+  const newId = createNote({ ...rest, favorite: false, pinned: false, deleted: false, open: true, title: rest.title })
+  if (sync) sync.push(newId)
+  return newId
 })
 
 ipcMain.handle('notes:list', () =>
@@ -466,6 +585,12 @@ ipcMain.handle('settings:set', (_e, patch) => {
   broadcastList()
   return db.settings
 })
+
+ipcMain.handle('sync:status', () => syncStatus)
+ipcMain.handle('sync:signIn', (_e, email, password) => (sync ? sync.signIn(email, password) : { error: 'Synchronizacja nie jest skonfigurowana.' }))
+ipcMain.handle('sync:signUp', (_e, email, password) => (sync ? sync.signUp(email, password) : { error: 'Synchronizacja nie jest skonfigurowana.' }))
+ipcMain.handle('sync:signOut', () => sync && sync.signOut())
+ipcMain.handle('sync:refresh', () => sync && sync.refresh())
 
 ipcMain.handle('shell:openExternal', (_e, url) => {
   if (/^https?:|^mailto:/.test(url)) shell.openExternal(url)
@@ -489,8 +614,15 @@ app.whenReady().then(() => {
       n.title = ''
     }
   }
+  for (const n of db.notes) {
+    if (!n.modified) n.modified = n.updatedAt || Date.now()
+  }
   const monthAgo = Date.now() - 30 * 24 * 3600 * 1000
-  db.notes = db.notes.filter((n) => !(n.empty && !n.deleted) && !(n.deleted && n.deletedAt && n.deletedAt < monthAgo))
+  const expired = db.notes.filter((n) => (n.empty && !n.deleted) || (n.deleted && n.deletedAt && n.deletedAt < monthAgo))
+  saveDb()
+
+  initSync()
+  expired.forEach((n) => purgeNote(n.id))
   saveDb()
 
   applyAutostart()
