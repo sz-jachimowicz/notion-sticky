@@ -88,6 +88,34 @@ cd android && ./gradlew assembleDebug
 
 Plik APK znajdziesz w `android/app/build/outputs/apk/debug/app-debug.apk`. Skopiuj go na telefon i zainstaluj (Android zapyta o zgodę na instalację z nieznanego źródła).
 
+## Bezpieczeństwo i prywatność
+
+**Gdzie są dane**
+- Komputer: `%APPDATA%\Notatki\notes.json`, zwykły plik JSON (niezaszyfrowany, jak w większości notatników). Sesja logowania do synchronizacji jest zaszyfrowana mechanizmem Windows (DPAPI, `safeStorage`) w `sync-auth.bin`.
+- Android: pamięć aplikacji (dostępna tylko dla niej). Kopia zapasowa Androida jest wyłączona (`allowBackup="false"`).
+- Chmura (tylko po zalogowaniu): tabela `notes` w projekcie Supabase właściciela. Reguły RLS (`supabase/schema.sql`) pozwalają każdemu kontu czytać i zmieniać wyłącznie własne notatki.
+
+**Połączenia sieciowe**
+- Bez logowania aplikacja nie łączy się z żadnym serwerem: nie ma telemetrii, analityki ani reklam.
+- Po zalogowaniu łączy się tylko z `*.supabase.co` (HTTPS/WSS).
+- Linki z notatek otwierają się w systemowej przeglądarce i tylko dla `http`, `https` i `mailto`.
+
+**Zabezpieczenia aplikacji na komputer (Electron)**
+- `contextIsolation` i piaskownica: kod okien nie ma dostępu do Node.js ani systemu, tylko do wąskiego API w `preload.js`.
+- Content-Security-Policy: wyłącznie lokalne skrypty, bez `eval` i bez zdalnego kodu.
+- Okna nie mogą nawigować na zewnętrzne strony ani otwierać nowych okien.
+- Electron Fuses: wyłączone `RunAsNode`, `NODE_OPTIONS` i `--inspect`; aplikacja ładuje się tylko z `app.asar`.
+
+**Zmiany w systemie**
+- Wpis autostartu w rejestrze użytkownika (`HKCU\...\Run`), który można wyłączyć w aplikacji.
+- Ikona w zasobniku i globalny skrót `Win+Shift+N`.
+- Instalacja tylko dla bieżącego użytkownika, bez uprawnień administratora.
+
+**Znane ograniczenia**
+- Plik `.exe` i instalator nie są podpisane cyfrowo.
+- `npm audit` zgłasza podatności wyłącznie w narzędziach do budowania (electron-builder, Capacitor CLI), które nie trafiają do gotowej aplikacji.
+- Rejestracja w projekcie Supabase jest otwarta, dopóki właściciel jej nie wyłączy (Authentication → „Allow new users to sign up”).
+
 ## Budowanie ze źródeł
 
 Wymagany jest [Node.js](https://nodejs.org) LTS.

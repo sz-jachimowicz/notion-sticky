@@ -18,6 +18,9 @@ android {
     }
     buildTypes {
         release {
+            // wersja produkcyjna (bez trybu debugowania), podpisana tym samym kluczem co dotychczasowe APK,
+            // żeby instalowała się jako aktualizacja na telefonach z wersją debug
+            signingConfig signingConfigs.debug
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

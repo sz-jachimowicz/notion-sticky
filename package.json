@@ -9,7 +9,8 @@
     "dist": "node build.mjs && electron-builder --win nsis",
     "pack": "node build.mjs && electron-builder --win --dir",
     "update": "npm run pack && node scripts/update-installed.mjs",
-    "android": "node build.mjs && npx cap sync android"
+    "android": "node build.mjs && npx cap sync android",
+    "android:release": "npm run android && cd android && wsl ./gradlew assembleRelease"
   },
   "keywords": [],
   "author": "szy05",
@@ -68,6 +69,14 @@
     },
     "directories": {
       "output": "release"
+    },
+    "electronFuses": {
+      "runAsNode": false,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableCookieEncryption": true,
+      "onlyLoadAppFromAsar": true,
+      "loadBrowserProcessSpecificV8Snapshot": false
     }
   }
 }

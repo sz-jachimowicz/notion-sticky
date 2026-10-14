@@ -3,9 +3,6 @@ const path = require('path')
 const fs = require('fs')
 const crypto = require('crypto')
 
-// testy: osobny folder danych, żeby nie kolidować z zainstalowaną aplikacją
-if (process.env.NOTES_DATA_DIR) app.setPath('userData', process.env.NOTES_DATA_DIR)
-
 if (!app.requestSingleInstanceLock()) {
   app.quit()
   process.exit(0)
@@ -632,16 +629,6 @@ app.whenReady().then(() => {
   try {
     globalShortcut.register('Super+Shift+N', () => createNote())
   } catch {}
-
-  // tryb deweloperski: zrzuty własnych okien do katalogu z NOTES_SHOT_DIR
-  if (process.env.NOTES_SHOT_DIR) {
-    setInterval(async () => {
-      for (const [i, w] of BrowserWindow.getAllWindows().entries()) {
-        const img = await w.webContents.capturePage()
-        fs.writeFileSync(path.join(process.env.NOTES_SHOT_DIR, `win${i}.png`), img.toPNG())
-      }
-    }, 2000)
-  }
 
   const toOpen = db.notes.filter((n) => n.open && !n.deleted)
   toOpen.forEach((n) => openNote(n.id, { focus: false }))
